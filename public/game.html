@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#08090d" />
+  <title>SlowAndSteady 2 - Game</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <div id="game-screen" class="screen active">
+    <div class="app-shell">
+      <header class="header">
+        <div class="header-top">
+          <a href="/" class="brand" aria-label="SlowAndSteady 2 home">
+            <svg class="brand-mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z"/>
+            </svg>
+            <span class="logo-small">SlowAndSteady 2</span>
+          </a>
+          <button id="guide-btn" class="btn btn-guide" type="button">Guide</button>
+        </div>
+
+        <section class="status-card" aria-label="Donation status">
+          <div class="status-section growth-section">
+            <div class="section-topline">
+              <span>Growth</span>
+              <span id="my-rank" class="badge">Rank #--</span>
+            </div>
+            <div class="growth-row">
+              <span id="player-title" class="title-badge">Seed</span>
+              <div class="status-hint title-hint">
+                <span>Next title</span>
+                <strong id="title-goal">Sprout in 99</strong>
+              </div>
+            </div>
+            <div class="growth-track" aria-label="Growth stages">
+              <div class="growth-stage" data-stage-min="0" style="--stage-color:#6b7280">
+                <span class="stage-dot"></span><span>Seed</span><small>start</small>
+              </div>
+              <div class="growth-stage" data-stage-min="100" style="--stage-color:#34d399">
+                <span class="stage-dot"></span><span>Sprout</span><small>100</small>
+              </div>
+              <div class="growth-stage" data-stage-min="10000" style="--stage-color:#22d3ee">
+                <span class="stage-dot"></span><span>Sapling</span><small>10K</small>
+              </div>
+              <div class="growth-stage" data-stage-min="1000000" style="--stage-color:#8b5cf6">
+                <span class="stage-dot"></span><span>Tree</span><small>1M</small>
+              </div>
+              <div class="growth-stage" data-stage-min="100000000" style="--stage-color:#f59e0b">
+                <span class="stage-dot"></span><span>Grove</span><small>100M</small>
+              </div>
+              <div class="growth-stage" data-stage-min="10000000000" style="--stage-color:#ef4444">
+                <span class="stage-dot"></span><span>Forest</span><small>10B</small>
+              </div>
+              <div class="growth-stage" data-stage-min="10000000000000" style="--stage-color:#e879f9">
+                <span class="stage-dot"></span><span>Ancient</span><small>10T</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="status-section power-section">
+            <div class="section-topline">
+              <span>Power</span>
+            </div>
+            <div class="power-grid">
+              <div class="metric">
+                <span>Wallet</span>
+                <strong id="balance" class="val">0</strong>
+              </div>
+              <div class="metric metric-boost">
+                <span>Boost</span>
+                <strong id="multiplier" class="val">0</strong>
+              </div>
+              <div class="metric">
+                <span>Next gift</span>
+                <strong id="total" class="val highlight">0</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="status-section timing-section">
+            <div class="section-topline">
+              <span>Timing</span>
+            </div>
+            <div class="timing-grid">
+              <div class="metric">
+                <span>Elapsed</span>
+                <strong id="seconds" class="val">0</strong>
+              </div>
+              <div id="donation-wait-card" class="metric metric-donation-wait">
+                <span>Time to donate</span>
+                <strong id="donation-wait">ready</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="status-section action-section">
+            <div class="section-topline">
+              <span>Donation progress</span>
+            </div>
+
+            <div class="progress-cluster">
+              <div class="progress-bar" aria-hidden="true">
+                <div id="progress-fill" class="progress-fill"></div>
+              </div>
+              <span id="progress-label" class="progress-label">0%</span>
+            </div>
+
+            <button id="random-donate-btn" class="btn btn-random-donate" type="button">
+              <span class="dice-icon" aria-hidden="true">
+                <span></span><span></span><span></span><span></span>
+              </span>
+              <span>Donate Random</span>
+            </button>
+          </div>
+        </section>
+
+      </header>
+
+      <main class="panels">
+        <section id="panel-leaderboard" class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Leaderboard</h2>
+            </div>
+            <span class="panel-note">Score rises by 2x what you give.</span>
+          </div>
+          <div class="toolbar leaderboard-search">
+            <input
+              type="search"
+              id="leaderboard-search"
+              class="search-input"
+              placeholder="Search players to donate..."
+            />
+          </div>
+          <div id="leaderboard-search-results" class="search-results"></div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Rank</th><th>Player</th><th>Score</th><th></th></tr>
+              </thead>
+              <tbody id="leaderboard-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="panel-received" class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Received</h2>
+            </div>
+            <span class="panel-note">People and guilds who lifted your wallet.</span>
+          </div>
+          <div class="table-wrap">
+            <table class="history-table">
+              <thead>
+                <tr><th>From</th><th>Amount</th><th>When</th><th></th></tr>
+              </thead>
+              <tbody id="received-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="panel-sent" class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Sent</h2>
+            </div>
+            <span class="panel-note">Every gift permanently strengthens future gifts.</span>
+          </div>
+          <div class="table-wrap">
+            <table class="history-table">
+              <thead>
+                <tr><th>To</th><th>Amount</th><th>When</th><th></th></tr>
+              </thead>
+              <tbody id="sent-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="panel-friends" class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Friends</h2>
+            </div>
+          </div>
+          <div class="toolbar">
+            <input
+              type="search"
+              id="friend-search"
+              class="search-input"
+              placeholder="Search players to add..."
+            />
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Player</th><th></th></tr>
+              </thead>
+              <tbody id="friends-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="panel-guilds" class="panel">
+          <div class="panel-header">
+            <div>
+              <h2>Guilds</h2>
+            </div>
+            <button id="create-guild-btn" class="btn btn-small">+ Create Guild</button>
+          </div>
+          <div class="toolbar">
+            <input
+              type="search"
+              id="guild-search"
+              class="search-input"
+              placeholder="Search guilds to join..."
+            />
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Guild</th><th></th><th></th></tr>
+              </thead>
+              <tbody id="guilds-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="modal-overlay" class="modal-overlay">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="guild-modal-title">
+        <div class="modal-header">
+          <h3 id="guild-modal-title">Create Guild</h3>
+          <button id="modal-close" class="modal-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <input type="text" id="guild-name-input" maxlength="14" placeholder="Guild name" />
+          <input type="password" id="guild-password-input" maxlength="10" placeholder="Password for joining" />
+          <button id="guild-create-submit" class="btn btn-primary">Create</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="guide-modal-overlay" class="modal-overlay">
+      <div class="modal modal-guide" role="dialog" aria-modal="true" aria-labelledby="guide-modal-title">
+        <div class="modal-header">
+          <h3 id="guide-modal-title">How to play SlowAndSteady 2</h3>
+          <button id="guide-modal-close" class="modal-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body guide-body">
+          <section class="guide-section">
+            <h4>The goal</h4>
+            <p>SlowAndSteady 2 is an idle generosity game. Your leaderboard score grows from what you give, not what you keep. The main loop is simple: wait, build a gift, donate it, then become stronger for the next gift.</p>
+          </section>
+
+          <section class="guide-section">
+            <h4>How gifts work</h4>
+            <ul>
+              <li>Your wallet grows over time from your current boost.</li>
+              <li>The next gift is roughly half of your current wallet plus your time-based growth.</li>
+              <li>When you donate, your wallet resets to zero.</li>
+              <li>The player you donate to receives the gift in their wallet.</li>
+              <li>Your total donated increases permanently, which improves future gifts.</li>
+            </ul>
+          </section>
+
+          <section class="guide-section">
+            <h4>When you can donate</h4>
+            <p>The donation progress bar shows how close your next gift is to being strong enough. When it reaches 100%, the Time to donate card turns ready and donation buttons become useful.</p>
+          </section>
+
+          <section class="guide-section">
+            <h4>Growth titles</h4>
+            <p>Your title is based on total donated: Seed, Sprout, Sapling, Tree, Grove, Forest, and Ancient. The growth track shows each milestone and how far you are from the next one.</p>
+          </section>
+
+          <section class="guide-section">
+            <h4>Ways to donate</h4>
+            <ul>
+              <li>Use Leaderboard search to find any player and donate directly.</li>
+              <li>Use Donate Random when you want to gift someone quickly.</li>
+              <li>Donate to friends or recent players from the Received and Sent sections.</li>
+              <li>Join or create guilds. Guild donations split across the other members.</li>
+            </ul>
+          </section>
+
+          <section class="guide-section">
+            <h4>Strategy</h4>
+            <p>Small early gifts help you grow quickly. Later, patience matters more because stronger players need longer waits to make meaningful gifts. The best long-term progress comes from donating regularly instead of only saving wallet balance.</p>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+  </div>
+
+  <script type="module" src="/js/game.js"></script>
+</body>
+</html>

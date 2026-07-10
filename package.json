@@ -1,0 +1,33 @@
+{
+  "name": "slowandsteady.xyz",
+  "version": "2.0.0",
+  "description": "Slow and Steady - a massively multiplayer idle donation game (slowandsteady.xyz)",
+  "homepage": "https://slowandsteady.xyz",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sathwik-mamidi/slowandsteady.xyz.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sathwik-mamidi/slowandsteady.xyz/issues"
+  },
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "setup-indexes": "node scripts/setup-indexes.js",
+    "test": "node --test"
+  },
+  "author": "Sathwik",
+  "license": "ISC",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "badwords-list": "^1.0.0",
+    "dotenv": "^16.4.7",
+    "express": "^5.2.1",
+    "ws": "^8.21.0",
+    "redis": "^4.7.0"
+  }
+}

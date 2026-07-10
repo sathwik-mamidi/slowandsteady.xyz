@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="SlowAndSteady 2 is a massively multiplayer incremental idle game where players climb a shared leaderboard by donating fantasy points." />
+  <meta name="theme-color" content="#08090d" />
+  <title>SlowAndSteady 2 - Multiplayer idle generosity game</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+    :root {
+      --bg: #08090d;
+      --bg2: #0e1017;
+      --bg3: #14161f;
+      --bg4: #1a1d28;
+      --border: #1f2233;
+      --border-light: #2a2e40;
+      --text: #e8e9ef;
+      --text-mid: #a1a4b3;
+      --text-dim: #6c7086;
+      --text-faint: #3d4155;
+      --ember: #f97316;
+      --ember-light: #fb923c;
+      --ember-dark: #ea580c;
+      --ember-glow: rgba(249, 115, 22, 0.15);
+      --green: #34d399;
+      --cyan: #22d3ee;
+      --violet: #8b5cf6;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --pink: #e879f9;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text-mid);
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    /* ---- Animated background ---- */
+
+    /* Large radial glow */
+    .bg-glow {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background:
+        radial-gradient(ellipse 50% 40% at 50% 35%, rgba(249,115,22,0.06) 0%, transparent 70%),
+        radial-gradient(ellipse 30% 25% at 25% 75%, rgba(234,88,12,0.03) 0%, transparent 60%),
+        radial-gradient(ellipse 30% 25% at 75% 25%, rgba(251,146,60,0.03) 0%, transparent 60%);
+    }
+
+    /* Animated grid */
+    .bg-grid {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 60% 50% at 50% 40%, black 20%, transparent 70%);
+      -webkit-mask-image: radial-gradient(ellipse 60% 50% at 50% 40%, black 20%, transparent 70%);
+    }
+
+    /* Floating ember particles */
+    .particles { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+    .ember-p {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0;
+      animation: rise var(--d, 6s) var(--delay, 0s) ease-in infinite;
+    }
+    @keyframes rise {
+      0%   { opacity: 0; transform: translateY(0) scale(1); }
+      10%  { opacity: var(--peak, 0.6); }
+      85%  { opacity: var(--peak, 0.6); }
+      100% { opacity: 0; transform: translateY(var(--travel, -140px)) scale(0.2); }
+    }
+
+    /* Orbiting ring */
+    .orbit-ring {
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 500px; height: 500px;
+      margin: -250px 0 0 -250px;
+      border: 1px solid rgba(249,115,22,0.04);
+      border-radius: 50%;
+      animation: spin 60s linear infinite;
+      pointer-events: none;
+    }
+    .orbit-ring::after {
+      content: '';
+      position: absolute;
+      top: -3px; left: 50%;
+      width: 6px; height: 6px;
+      margin-left: -3px;
+      background: var(--ember);
+      border-radius: 50%;
+      opacity: 0.3;
+      box-shadow: 0 0 10px var(--ember);
+    }
+    .orbit-ring-2 {
+      width: 700px; height: 700px;
+      margin: -350px 0 0 -350px;
+      border-color: rgba(249,115,22,0.025);
+      animation-duration: 90s;
+      animation-direction: reverse;
+    }
+    .orbit-ring-2::after { opacity: 0.15; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ---- Main content ---- */
+    .main {
+      position: relative; z-index: 10;
+      width: 100%; max-width: 640px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+      display: flex; flex-direction: column;
+      align-items: center; text-align: center;
+      gap: 1.75rem;
+    }
+
+    /* Flame icon */
+    .flame-icon {
+      width: 40px; height: 40px;
+      color: var(--ember);
+      filter: drop-shadow(0 0 12px rgba(249,115,22,0.5));
+      animation: pulse-glow 3s ease-in-out infinite;
+    }
+    @keyframes pulse-glow {
+      0%, 100% { filter: drop-shadow(0 0 8px rgba(249,115,22,0.4)); }
+      50%      { filter: drop-shadow(0 0 24px rgba(249,115,22,0.7)); }
+    }
+
+    /* Title */
+    .title {
+      font-size: clamp(3rem, 8vw, 5rem);
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: 0;
+      line-height: 1;
+      text-shadow: 0 0 60px rgba(249,115,22,0.25), 0 0 120px rgba(249,115,22,0.1);
+    }
+
+    .tagline {
+      font-size: clamp(1rem, 2.5vw, 1.3rem);
+      color: var(--ember-light);
+      font-weight: 600;
+    }
+
+    .description {
+      color: var(--text-dim);
+      font-size: 0.95rem;
+      max-width: 480px;
+      line-height: 1.75;
+    }
+
+    /* ---- Feature cards ---- */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      width: 100%;
+      max-width: 540px;
+    }
+    .feat {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem 1rem;
+      text-align: center;
+      transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s;
+      cursor: default;
+    }
+    .feat:hover {
+      border-color: rgba(249,115,22,0.35);
+      box-shadow: 0 0 30px rgba(249,115,22,0.06), inset 0 0 20px rgba(249,115,22,0.03);
+      transform: translateY(-3px);
+    }
+    .feat-icon {
+      width: 28px; height: 28px;
+      color: var(--ember);
+      margin: 0 auto 0.6rem;
+    }
+    .feat h3 {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.3rem;
+    }
+    .feat p {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+    }
+
+    /* ---- Formula bar ---- */
+    .formula-bar {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.6rem;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.7rem 1.4rem;
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 0.78rem;
+      color: var(--text-dim);
+    }
+    .formula-bar .f-op { color: var(--text-faint); }
+    .formula-bar .f-em { color: var(--ember-light); font-weight: 600; }
+    .formula-bar .f-wh { color: var(--text); }
+
+    /* ---- Growth stages ---- */
+    .stages {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .stages-label {
+      font-size: 0.6rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-faint);
+      margin-right: 0.25rem;
+    }
+    .stage-line { width: 12px; height: 1px; background: var(--border-light); }
+    .stage-group { position: relative; display: flex; flex-direction: column; align-items: center; }
+    .stage-dot {
+      border-radius: 50%;
+      transition: transform 0.25s, filter 0.25s;
+      cursor: default;
+    }
+    .stage-dot:hover { transform: scale(1.7); filter: brightness(1.3); }
+    .stage-tip {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      background: var(--bg4);
+      border: 1px solid var(--border-light);
+      color: var(--text);
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      white-space: nowrap;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.2s, visibility 0.2s;
+      pointer-events: none;
+    }
+    .stage-tip .tip-range { color: var(--text-faint); font-weight: 400; }
+    .stage-group:hover .stage-tip { visibility: visible; opacity: 1; }
+
+    /* ---- Enter section ---- */
+    .enter-box { width: 100%; max-width: 360px; }
+
+    .enter-box input[type="text"] {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.8rem 1rem;
+      color: var(--text);
+      font-size: 1rem;
+      text-align: center;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .enter-box input:focus {
+      border-color: var(--ember);
+      box-shadow: 0 0 0 3px rgba(249,115,22,0.15);
+    }
+    .enter-box input::placeholder { color: var(--text-faint); }
+
+    .btn-primary {
+      display: block; width: 100%;
+      background: var(--ember);
+      color: #fff;
+      font-size: 0.95rem;
+      font-weight: 700;
+      padding: 0.8rem;
+      border: none; border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 20px rgba(249,115,22,0.2);
+      text-decoration: none;
+      text-align: center;
+    }
+    .btn-primary:hover {
+      background: var(--ember-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 30px rgba(249,115,22,0.3);
+    }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+
+    .form-stack { display: flex; flex-direction: column; gap: 0.7rem; }
+
+    .error-msg { color: var(--red); font-size: 0.82rem; display: none; }
+    .error-msg.show { display: block; }
+
+    .returning { display: flex; flex-direction: column; gap: 0.75rem; align-items: center; }
+    .logout-btn {
+      background: none; border: none;
+      color: var(--text-faint);
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .logout-btn:hover { color: var(--text-mid); }
+
+    .hidden { display: none !important; }
+
+    /* ---- Game preview ---- */
+    .game-preview {
+      width: 100%;
+      max-width: 520px;
+      background: rgba(14,16,23,0.82);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      box-shadow: 0 20px 70px rgba(0,0,0,0.24), inset 0 1px 0 rgba(255,255,255,0.03);
+      text-align: left;
+    }
+    .preview-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.85rem;
+    }
+    .preview-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      color: var(--text);
+      font-weight: 800;
+      font-size: 0.9rem;
+    }
+    .preview-flame {
+      width: 18px;
+      height: 18px;
+      color: var(--ember);
+      filter: drop-shadow(0 0 8px rgba(249,115,22,0.45));
+    }
+    .preview-rank {
+      color: var(--ember-light);
+      font-size: 0.75rem;
+      font-weight: 700;
+      background: rgba(249,115,22,0.1);
+      border: 1px solid rgba(249,115,22,0.22);
+      border-radius: 999px;
+      padding: 0.25rem 0.55rem;
+      white-space: nowrap;
+    }
+    .preview-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.55rem;
+      margin-bottom: 0.85rem;
+    }
+    .preview-stat {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.65rem;
+    }
+    .preview-stat span {
+      display: block;
+      color: var(--text-faint);
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .preview-stat strong {
+      display: block;
+      color: var(--text);
+      font-size: 1rem;
+      margin-top: 0.15rem;
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+    .preview-progress {
+      height: 7px;
+      background: var(--bg4);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-bottom: 0.85rem;
+    }
+    .preview-progress span {
+      display: block;
+      width: 72%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--ember), var(--green));
+      border-radius: inherit;
+      box-shadow: 0 0 18px rgba(249,115,22,0.35);
+    }
+    .preview-table {
+      display: grid;
+      gap: 0.35rem;
+      font-size: 0.76rem;
+    }
+    .preview-row {
+      display: grid;
+      grid-template-columns: 3rem minmax(0, 1fr) 4.5rem;
+      gap: 0.75rem;
+      align-items: center;
+      color: var(--text-dim);
+    }
+    .preview-row strong {
+      color: var(--text);
+      font-weight: 700;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .preview-row .gain {
+      color: var(--green);
+      text-align: right;
+      font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    }
+
+    /* ---- Credit ---- */
+    .credit {
+      display: grid;
+      gap: 0.25rem;
+      font-size: 0.7rem;
+      color: var(--text-faint);
+      letter-spacing: 0.3px;
+    }
+    .credit a {
+      color: var(--text-dim);
+      text-decoration: underline;
+      text-decoration-color: var(--border-light);
+      text-underline-offset: 2px;
+      transition: color 0.15s;
+    }
+    .credit a:hover { color: var(--ember-light); }
+
+    /* ---- Animations ---- */
+    .slide-up {
+      opacity: 0;
+      transform: translateY(18px);
+      animation: slideUp 0.65s ease forwards;
+    }
+    @keyframes slideUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .d1 { animation-delay: 0.08s; }
+    .d2 { animation-delay: 0.18s; }
+    .d3 { animation-delay: 0.3s; }
+    .d4 { animation-delay: 0.42s; }
+    .d5 { animation-delay: 0.54s; }
+    .d6 { animation-delay: 0.66s; }
+    .d7 { animation-delay: 0.78s; }
+    .d8 { animation-delay: 0.9s; }
+    .d9 { animation-delay: 1.02s; }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 560px) {
+      .features { grid-template-columns: 1fr; max-width: 280px; }
+      .formula-bar { font-size: 0.7rem; padding: 0.6rem 1rem; flex-wrap: wrap; justify-content: center; }
+      .stages { flex-wrap: wrap; justify-content: center; }
+      .game-preview { max-width: 360px; }
+      .preview-stats { grid-template-columns: 1fr; }
+      .orbit-ring, .orbit-ring-2 { display: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+      }
+      .slide-up { opacity: 1; transform: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background layers -->
+  <div class="bg-glow"></div>
+  <div class="bg-grid"></div>
+
+  <!-- Particles -->
+  <div class="particles" aria-hidden="true">
+    <span class="ember-p" style="left:10%;bottom:5%;width:3px;height:3px;background:#fb923c;--d:5.5s;--delay:0s;--travel:-160px;--peak:0.5"></span>
+    <span class="ember-p" style="left:20%;bottom:8%;width:2px;height:2px;background:#f97316;--d:7s;--delay:1.2s;--travel:-200px;--peak:0.35"></span>
+    <span class="ember-p" style="left:35%;bottom:3%;width:4px;height:4px;background:#fdba74;--d:6s;--delay:0.3s;--travel:-150px;--peak:0.45"></span>
+    <span class="ember-p" style="left:50%;bottom:6%;width:2px;height:2px;background:#fb923c;--d:8s;--delay:2s;--travel:-180px;--peak:0.3"></span>
+    <span class="ember-p" style="left:65%;bottom:4%;width:3px;height:3px;background:#ea580c;--d:5s;--delay:0.7s;--travel:-140px;--peak:0.5"></span>
+    <span class="ember-p" style="left:78%;bottom:10%;width:2px;height:2px;background:#fdba74;--d:9s;--delay:3s;--travel:-190px;--peak:0.25"></span>
+    <span class="ember-p" style="left:88%;bottom:7%;width:3px;height:3px;background:#f97316;--d:6.5s;--delay:1.5s;--travel:-170px;--peak:0.4"></span>
+    <span class="ember-p" style="left:5%;bottom:15%;width:2px;height:2px;background:#fb923c;--d:7.5s;--delay:4s;--travel:-160px;--peak:0.2"></span>
+    <span class="ember-p" style="left:42%;bottom:12%;width:2px;height:2px;background:#ea580c;--d:8.5s;--delay:2.5s;--travel:-200px;--peak:0.25"></span>
+    <span class="ember-p" style="left:72%;bottom:2%;width:3px;height:3px;background:#fdba74;--d:5.8s;--delay:0.9s;--travel:-130px;--peak:0.45"></span>
+    <span class="ember-p" style="left:55%;bottom:18%;width:2px;height:2px;background:#f97316;--d:10s;--delay:5s;--travel:-220px;--peak:0.2"></span>
+    <span class="ember-p" style="left:30%;bottom:20%;width:3px;height:3px;background:#fb923c;--d:6.2s;--delay:1.8s;--travel:-145px;--peak:0.35"></span>
+  </div>
+
+  <!-- Orbit rings -->
+  <div class="orbit-ring" aria-hidden="true"></div>
+  <div class="orbit-ring orbit-ring-2" aria-hidden="true"></div>
+
+  <!-- Main content -->
+  <main class="main">
+
+    <!-- Flame + Title -->
+    <div class="slide-up" style="display:flex;flex-direction:column;align-items:center;gap:0.75rem;">
+      <svg class="flame-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z"/>
+      </svg>
+      <h1 class="title">SlowAndSteady 2</h1>
+    </div>
+
+    <!-- Tagline -->
+    <p class="tagline slide-up d1">A massively multiplayer idle game where giving is how you win.</p>
+
+    <!-- Description -->
+    <p class="description slide-up d2">
+      Earn fantasy points in a shared online world, donate them to other players,
+      and watch your multiplier grow. Every gift changes the leaderboard, strengthens
+      your future income, and turns generosity into the main competitive strategy.
+    </p>
+
+    <!-- Features -->
+    <div class="features slide-up d3">
+      <div class="feat">
+        <svg class="feat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+        <h3>Shared World</h3>
+        <p>Everyone plays on the same live leaderboard economy</p>
+      </div>
+      <div class="feat">
+        <svg class="feat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <h3>Idle Momentum</h3>
+        <p>Fantasy points build over time, even while you wait</p>
+      </div>
+      <div class="feat">
+        <svg class="feat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        <h3>Guild Strategy</h3>
+        <p>Coordinate gifts with other players and lift entire groups</p>
+      </div>
+    </div>
+
+    <!-- Formula -->
+    <div class="formula-bar slide-up d4">
+      <span class="f-wh">power</span>
+      <span class="f-op">=</span>
+      <span>(</span>wallet
+      <span class="f-op">+</span>
+      time
+      <span class="f-op">&times;</span>
+      <span class="f-em">&sup3;&radic;generosity</span><span>)</span>
+      <span class="f-op">&divide;</span>
+      2
+    </div>
+
+    <!-- Growth stages -->
+    <div class="stages slide-up d5">
+      <span class="stages-label">Growth</span>
+
+      <div class="stage-group">
+        <div class="stage-dot" style="width:8px;height:8px;background:#6b7280"></div>
+        <div class="stage-tip">Seed <span class="tip-range">start</span></div>
+      </div>
+      <div class="stage-line"></div>
+      <div class="stage-group">
+        <div class="stage-dot" style="width:9px;height:9px;background:var(--green)"></div>
+        <div class="stage-tip" style="color:var(--green)">Sprout <span class="tip-range">100+</span></div>
+      </div>
+      <div class="stage-line"></div>
+      <div class="stage-group">
+        <div class="stage-dot" style="width:10px;height:10px;background:var(--cyan)"></div>
+        <div class="stage-tip" style="color:var(--cyan)">Sapling <span class="tip-range">10K+</span></div>
+      </div>
+      <div class="stage-line"></div>
+      <div class="stage-group">
+        <div class="stage-dot" style="width:12px;height:12px;background:var(--violet)"></div>
+        <div class="stage-tip" style="color:var(--violet)">Tree <span class="tip-range">1M+</span></div>
+      </div>
+      <div class="stage-line"></div>
+      <div class="stage-group">
+        <div class="stage-dot" style="width:14px;height:14px;background:var(--amber)"></div>
+        <div class="stage-tip" style="color:var(--amber)">Grove <span class="tip-range">100M+</span></div>
+      </div>
+      <div class="stage-line"></div>
+      <div class="stage-group">
+        <div class="stage-dot" style="width:16px;height:16px;background:var(--red)"></div>
+        <div class="stage-tip" style="color:var(--red)">Forest <span class="tip-range">10B+</span></div>
+      </div>
+      <div class="stage-line"></div>
+      <div class="stage-group">
+        <div class="stage-dot" style="width:18px;height:18px;background:var(--pink);box-shadow:0 0 12px rgba(232,121,249,0.4)"></div>
+        <div class="stage-tip" style="color:var(--pink)">Ancient <span class="tip-range">10T+</span></div>
+      </div>
+    </div>
+
+    <!-- Leaderboard teaser -->
+    <p class="slide-up d6" style="font-size:0.78rem;color:var(--text-faint);max-width:380px;line-height:1.7;">
+      The leaderboard is a multiplayer race where hoarding is not enough.
+      Donate fantasy points, grow your multiplier, and pass players by helping
+      the same people you are competing against.
+    </p>
+
+    <!-- Enter / Continue -->
+    <div class="enter-box slide-up d7">
+
+      <!-- New player -->
+      <div id="new-player" class="form-stack">
+        <input
+          type="text"
+          id="username-input"
+          maxlength="14"
+          placeholder="Choose a username"
+          autocomplete="off"
+        />
+        <button id="enter-btn" class="btn-primary">Enter the Game</button>
+        <p id="enter-error" class="error-msg"></p>
+      </div>
+
+      <!-- Returning player -->
+      <div id="returning-player" class="returning hidden">
+        <a href="/game" class="btn-primary">Continue as <strong id="returning-name"></strong></a>
+        <button id="logout-btn" class="logout-btn">Logout and start as a new player</button>
+      </div>
+    </div>
+
+    <!-- Game preview -->
+    <div class="game-preview slide-up d8" aria-label="SlowAndSteady 2 game preview">
+      <div class="preview-top">
+        <div class="preview-brand">
+          <svg class="preview-flame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 12c2-2.96 0-7-1-8 0 3.038-1.773 4.741-3 6-1.226 1.26-2 3.24-2 5a6 6 0 1 0 12 0c0-1.532-1.056-3.94-2-5-1.786 3-2.791 3-4 2z"/>
+          </svg>
+          <span>Live round</span>
+        </div>
+        <span class="preview-rank">2,418 online</span>
+      </div>
+      <div class="preview-stats">
+        <div class="preview-stat"><span>Players</span><strong>42.8K</strong></div>
+        <div class="preview-stat"><span>Multiplier</span><strong>12.42</strong></div>
+        <div class="preview-stat"><span>Next Gift</span><strong>3.6K</strong></div>
+      </div>
+      <div class="preview-progress"><span></span></div>
+      <div class="preview-table">
+        <div class="preview-row"><span>#10</span><strong>emberlyn</strong><span class="gain">+8.4K</span></div>
+        <div class="preview-row"><span>#11</span><strong>you</strong><span class="gain">+7.2K</span></div>
+        <div class="preview-row"><span>guild</span><strong>hearthguild</strong><span class="gain">18 online</span></div>
+      </div>
+    </div>
+
+    <!-- Credit -->
+    <p class="credit slide-up d9">
+      <span>
+        SlowAndSteady 2 rewards ambition, patience, and generosity in one shared multiplayer race.
+      </span>
+      <span>
+        Contact:
+        <a href="mailto:developer@slowandsteady.xyz">developer@slowandsteady.xyz</a>
+      </span>
+    </p>
+
+  </main>
+
+  <script>
+    // Auth state
+    const uid = localStorage.getItem("client_uid");
+    const username = localStorage.getItem("client_username");
+    const newPlayerEl = document.getElementById("new-player");
+    const returningEl = document.getElementById("returning-player");
+
+    if (uid) {
+      newPlayerEl.classList.add("hidden");
+      returningEl.classList.remove("hidden");
+      document.getElementById("returning-name").textContent = username || "your saved player";
+    }
+
+    // Registration
+    const input = document.getElementById("username-input");
+    const btn = document.getElementById("enter-btn");
+    const errorEl = document.getElementById("enter-error");
+
+    btn.addEventListener("click", register);
+    input.addEventListener("keyup", (e) => { if (e.key === "Enter") register(); });
+
+    async function register() {
+      const name = input.value.trim();
+      if (!name) { showError("Please enter a username."); return; }
+
+      btn.disabled = true;
+      btn.textContent = "Creating...";
+      errorEl.classList.remove("show");
+
+      try {
+        const res = await fetch("/api/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: name }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          showError(data.error || "Something went wrong.");
+          btn.disabled = false;
+          btn.textContent = "Enter the Game";
+          return;
+        }
+
+        localStorage.setItem("client_uid", data.uid);
+        localStorage.setItem("client_username", data.username);
+        window.location.href = "/game";
+      } catch {
+        showError("Connection failed. Try again.");
+        btn.disabled = false;
+        btn.textContent = "Enter the Game";
+      }
+    }
+
+    // Logout
+    document.getElementById("logout-btn").addEventListener("click", () => {
+      localStorage.removeItem("client_uid");
+      localStorage.removeItem("client_username");
+      returningEl.classList.add("hidden");
+      newPlayerEl.classList.remove("hidden");
+      input.focus();
+    });
+
+    function showError(msg) {
+      errorEl.textContent = msg;
+      errorEl.classList.add("show");
+    }
+  </script>
+</body>
+</html>
