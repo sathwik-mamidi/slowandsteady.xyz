@@ -11,3 +11,10 @@ a fix to be prepared before publishing details.
 
 Only the latest version on the default branch is currently supported with
 security updates.
+
+## Deployment boundaries
+
+Treat WebSocket messages and browser-stored player tokens as untrusted input.
+Public deployments should run behind TLS, restrict Redis to the application
+network, set production rate limits, and keep `.env` and Redis snapshots out of
+the web root and repository.
